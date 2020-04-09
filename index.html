@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+  <head>
+    <title>Data visualization tools</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Byron C. Jaeger" />
+    <link rel="stylesheet" href="slides.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Data visualization tools
+## Also: data tidying tools
+### Byron C. Jaeger
+### Last updated: 2020-04-09
+
+---
+
+class: inverse, center, middle
+
+
+
+# Tidying your data
+
+---
+class: center, middle
+
+## Going from here
+
+&lt;img src="img/excel_spreadsheet.png" width="1024" /&gt;
+
+
+---
+
+## To here
+
+
+```r
+glimpse(supermarket, width = 60)
+```
+
+```
+## Rows: 14,059
+## Columns: 16
+## $ transaction        &lt;dbl&gt; 1, 2, 3, 4, 5, 6, 7, 8, 9, 1...
+## $ purchase_date      &lt;dttm&gt; 2011-12-18, 2011-12-20, 201...
+## $ customer_id        &lt;dbl&gt; 7223, 7841, 8374, 9619, 1900...
+## $ gender             &lt;chr&gt; "F", "M", "F", "M", "F", "F"...
+## $ marital_status     &lt;chr&gt; "S", "M", "M", "M", "S", "M"...
+## $ homeowner          &lt;chr&gt; "Y", "Y", "N", "Y", "Y", "Y"...
+## $ children           &lt;dbl&gt; 2, 5, 2, 3, 3, 3, 2, 2, 3, 1...
+## $ annual_income      &lt;chr&gt; "$30K - $50K", "$70K - $90K"...
+## $ city               &lt;chr&gt; "Los Angeles", "Los Angeles"...
+## $ state_or_province  &lt;chr&gt; "CA", "CA", "WA", "OR", "CA"...
+## $ country            &lt;chr&gt; "USA", "USA", "USA", "USA", ...
+## $ product_family     &lt;chr&gt; "Food", "Food", "Food", "Foo...
+## $ product_department &lt;chr&gt; "Snack Foods", "Produce", "S...
+## $ product_category   &lt;chr&gt; "Snack Foods", "Vegetables",...
+## $ units_sold         &lt;dbl&gt; 5, 5, 3, 4, 4, 3, 4, 6, 1, 2...
+## $ revenue            &lt;dbl&gt; 27.38, 14.90, 5.52, 4.44, 14...
+```
+
+---
+
+## Import
+
+- `read_excel()` can read specific sheets into R as `tibbles`
+
+
+```r
+supermarket &lt;- read_excel(
+  path  = "data/Supermarket Transactions.xlsx",
+  sheet = "Data"
+)
+
+supermarket[1:2, 1:3]
+```
+
+```
+## # A tibble: 2 x 3
+##   Transaction `Purchase Date`     `Customer ID`
+##         &lt;dbl&gt; &lt;dttm&gt;                      &lt;dbl&gt;
+## 1           1 2011-12-18 00:00:00          7223
+## 2           2 2011-12-20 00:00:00          7841
+```
+
+Look at the first 3 names of the spreadsheet's data. What do you see?
+
+---
+background-image: url(img/janitor_clean_names.png)
+background-size: 75% 
+background-position: 50% 75%
+
+## Variable names
+
+The variable names have spaces and are written in Title Case. There's nothing inherently wrong with that, but it's less than ideal for workflow and tedious to manually rename everything. `janitor`, an R package for cleaning data, is here to help.
+
+---
+
+## Variable names
+
+Pick your favorite naming convention:
+
+
+```r
+clean_names(supermarket, case = 'snake')[1:2, 1:3]
+```
+
+```
+## # A tibble: 2 x 3
+##   transaction purchase_date       customer_id
+##         &lt;dbl&gt; &lt;dttm&gt;                    &lt;dbl&gt;
+## 1           1 2011-12-18 00:00:00        7223
+## 2           2 2011-12-20 00:00:00        7841
+```
+
+---
+
+## Variable names
+
+Pick your favorite naming convention:
+
+
+```r
+clean_names(supermarket, case = 'lower_camel')[1:2, 1:3]
+```
+
+```
+## # A tibble: 2 x 3
+##   transaction purchaseDate        customerId
+##         &lt;dbl&gt; &lt;dttm&gt;                   &lt;dbl&gt;
+## 1           1 2011-12-18 00:00:00       7223
+## 2           2 2011-12-20 00:00:00       7841
+```
+
+---
+
+## Variable names
+
+Pick your favorite naming convention:
+
+
+```r
+clean_names(supermarket, case = 'screaming_snake')[1:2, 1:3]
+```
+
+```
+## # A tibble: 2 x 3
+##   TRANSACTION PURCHASE_DATE       CUSTOMER_ID
+##         &lt;dbl&gt; &lt;dttm&gt;                    &lt;dbl&gt;
+## 1           1 2011-12-18 00:00:00        7223
+## 2           2 2011-12-20 00:00:00        7841
+```
+
+---
+
+
+
+
+## Review: data summarization
+
+Find the total `revenue` from supermarkets for each city:
+
+
+```r
+city_rev &lt;- supermarket %&gt;%
+  group_by(city) %&gt;%
+  summarise(revenue = sum(revenue, na.rm = TRUE)) 
+
+city_rev
+```
+
+```
+## # A tibble: 23 x 2
+##    city          revenue
+##  * &lt;chr&gt;           &lt;dbl&gt;
+##  1 Acapulco        5161.
+##  2 Bellingham       993.
+##  3 Beverly Hills  10320.
+##  4 Bremerton      10975.
+##  5 Camacho         5797.
+##  6 Guadalajara      523.
+##  7 Hidalgo        11313.
+##  8 Los Angeles    12296.
+##  9 Merida          8740.
+## 10 Mexico City     2488.
+## # ... with 13 more rows
+```
+
+---
+
+## Bar charts
+
+Without proper hygiene, bar charts devolve into the bad charts
+
+
+```r
+ggplot(city_rev, aes(x = city, y = revenue)) +
+  geom_bar(stat = "identity")
+```
+
+![](index_files/figure-html/unnamed-chunk-10-1.png)&lt;!-- --&gt;
+
+---
+
+## Order matters
+
+
+```r
+ggplot(city_rev) +
+* aes(x = reorder(city, revenue), y = revenue) +
+  geom_bar(stat = "identity")
+```
+
+![](index_files/figure-html/unnamed-chunk-11-1.png)&lt;!-- --&gt;
+
+---
+
+## Orientation matters
+
+
+```r
+ggplot(city_rev) +
+  aes(x = reorder(city, revenue), y = revenue) +
+  geom_bar(stat = "identity") + 
+* coord_flip()
+```
+
+![](index_files/figure-html/unnamed-chunk-12-1.png)&lt;!-- --&gt;
+
+---
+class: center, middle
+
+## Question
+
+Who generates more revenue for super markets? 
+
+--
+
+Shoppers who are men or shoppers who are women?
+
+---
+
+## Data summarization
+
+
+```r
+city_rev_gender &lt;- supermarket %&gt;%
+  group_by(city, gender) %&gt;%
+  summarise(revenue = sum(revenue, na.rm = TRUE)) %&gt;% 
+* ungroup() %&gt;%
+  mutate(
+    gender = recode(gender, 'F' = 'Female', 'M' = 'Male'),
+    # re-order city in the data rather than the plot
+    # why would this fail if data were grouped?
+*   city = fct_reorder(city, .x = revenue)
+  )
+
+city_rev_gender[1:3,]
+```
+
+```
+## # A tibble: 3 x 3
+##   city       gender revenue
+##   &lt;fct&gt;      &lt;chr&gt;    &lt;dbl&gt;
+## 1 Acapulco   Female   2566.
+## 2 Acapulco   Male     2596.
+## 3 Bellingham Female    453.
+```
+
+---
+
+## Comparisons
+
+Aesthetic option `fill` applies to the inside of bars, color applies to their border
+
+
+```r
+*ggplot(city_rev_gender, aes(city, revenue, fill = gender)) +
+  geom_bar(stat = "identity", color = 'purple') +
+  coord_flip()
+```
+
+![](index_files/figure-html/unnamed-chunk-14-1.png)&lt;!-- --&gt;
+
+---
+
+## Comparisons
+
+`position` governs how the bars are placed
+
+
+```r
+ggplot(city_rev_gender, aes(city, revenue, fill = gender)) +
+* geom_bar(stat = "identity", position = "dodge") +
+  coord_flip()
+```
+
+![](index_files/figure-html/unnamed-chunk-15-1.png)&lt;!-- --&gt;
+
+---
+
+## Comparisons
+
+`facet_wrap()` and `facet_grid()` give one plot per group 
+
+
+```r
+ggplot(city_rev_gender, aes(city, revenue, fill = gender)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  coord_flip() +
+* facet_wrap( ~ gender)
+```
+
+![](index_files/figure-html/unnamed-chunk-16-1.png)&lt;!-- --&gt;
+
+
+---
+
+## Maximal info, minimal ink 
+
+&gt; Graphical excellence is that which gives to the viewer the greatest number of ideas in the shortest time with the least ink in the smallest space.
+&gt;
+&gt; &lt;footer&gt;--- Edward R. Tufte&lt;/footer&gt;
+
+- How can we make it easy to pick out the patterns across cities? 
+
+- Can we use less ink?
+
+---
+
+## Points
+
+
+```r
+ggplot(city_rev_gender, aes(revenue, city)) +
+  geom_point(aes(color = gender))
+```
+
+![](index_files/figure-html/unnamed-chunk-17-1.png)&lt;!-- --&gt;
+
+---
+
+## Size
+
+
+```r
+ggplot(city_rev_gender, aes(revenue, city)) +
+  geom_point(aes(color = gender), size = 3) + 
+* theme(text = element_text(size = 16))
+```
+
+![](index_files/figure-html/unnamed-chunk-18-1.png)&lt;!-- --&gt;
+
+---
+
+## Aesthetic inheritance
+
+- ggplot adds layers, one by one, to a graph.
+
+- general aesthetics for the whole graph can be set using `aes()`
+
+    + in the `ggplot()` function
+    
+    + in a stand-alone `aes()` function.
+
+- the aesthetics of the current `geom` can be set using `aes()` _inside_ the geom function.
+
+---
+
+The aesthetics in this line are inherited by `geom_line`
+
+
+```r
+ggplot(city_rev_gender) +
+* aes(x = revenue, y = city) +
+  geom_point(aes(color = gender), size = 3) +
+  theme(text = element_text(size = 16)) +
+  geom_line() # inherits x = revenue, y = city
+```
+
+The aesthetics in this line are __not__ inherited by `geom_line`
+
+
+```r
+ggplot(city_rev_gender) +
+  aes(x = revenue, y = city) + 
+* geom_point(aes(color = gender), size = 3) +
+  theme(text = element_text(size = 16)) +
+  geom_line() # inherits x = revenue, y = city
+```
+
+---
+
+## Lines
+
+the main aesthetic for lines is group. Bad groupings ruin good plots.
+
+
+```r
+ggplot(city_rev_gender) +
+  aes(x = revenue, y = city) + 
+  geom_point(aes(color = gender), size = 3) +
+  theme(text = element_text(size = 16)) +
+  geom_line(aes(group = gender)) # disaster!
+```
+
+![](index_files/figure-html/unnamed-chunk-21-1.png)&lt;!-- --&gt;
+
+---
+
+## Lines
+
+Good groupings help draw the eye to the relevant comparisons
+
+
+```r
+ggplot(city_rev_gender) +
+  aes(x = revenue, y = city) + 
+  geom_point(aes(color = gender), size = 3) + 
+  theme(text = element_text(size = 16)) +
+  geom_line(aes(group = city)) 
+```
+
+![](index_files/figure-html/unnamed-chunk-22-1.png)&lt;!-- --&gt;
+
+---
+
+## Order matters
+
+If you want points to appear on top of the lines, put the line layer down _before_ the point layer.
+
+
+```r
+ggplot(city_rev_gender) +
+  aes(x = revenue, y = city) + 
+* geom_line(aes(group = city)) +
+  geom_point(aes(color = gender), size = 3) + 
+  theme(text = element_text(size = 16)) 
+```
+
+![](index_files/figure-html/unnamed-chunk-23-1.png)&lt;!-- --&gt;
+
+---
+
+## Use text intelligently
+
+Annotation can help readers understand the most relevant parts of your data. 
+- `ggplot` uses `geom_text()` to add text layers
+
+- the main aesthetic for `geom_text()` is `label`
+
+- `ggforce`, an extension of `ggplot`, has a lot of handly annotation helpers.
+
+Remember, minimal ink...
+
+---
+
+Oh dear...
+
+
+```r
+ggplot(city_rev_gender) +
+* aes(x = revenue, y = city, label = revenue) +
+  geom_line(aes(group = city)) +
+  geom_point(aes(color = gender), size = 3) + 
+* geom_text(aes(color = gender)) +
+  theme(text = element_text(size = 16)) 
+```
+
+![](index_files/figure-html/unnamed-chunk-24-1.png)&lt;!-- --&gt;
+
+---
+
+## Your turn
+
+- It will take some data wrangling to get this figure just how we want it. 
+
+- Let's finish the figure in `exercises.Rmd`
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
